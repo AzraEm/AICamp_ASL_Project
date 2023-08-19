@@ -1,0 +1,54 @@
+import cv2
+import numpy as np
+from tensorflow.keras.models import load_model
+
+# Load your trained model
+model = load_model("/Users/azra/Downloads/Submission_combined.h5")  
+
+image_width = 100
+image_height = 100
+
+
+# Function to preprocess the frame
+def preprocess_frame(frame):
+    global image_width, image_height
+    frame = cv2.resize(frame, (image_width, image_height))
+    frame = frame.astype('float32') / 255.0
+    frame = np.expand_dims(frame, axis=0)
+    return frame
+
+
+# Function to interpret the model's output
+def interpret_output(predictions):
+    asl_letter = chr(ord('a') + np.argmax(predictions[0]))
+    return asl_letter
+
+# Access the webcam
+cap = cv2.VideoCapture(0)
+
+while True:
+    ret, frame = cap.read()
+
+    if not ret:
+        break
+
+    # Preprocess the frame for letter prediction
+    preprocessed_frame = preprocess_frame(frame)
+
+    # Predict using your model
+    predictions = model.predict(preprocessed_frame)
+
+    # Interpret the output
+    predicted_letter = interpret_output(predictions)
+
+    # Display the recognized letter on the screen
+    cv2.putText(frame, predicted_letter, (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+    cv2.imshow('ASL Fingerspelling Recognition', frame)
+
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+
+cap.release()
+cv2.destroyAllWindows()
